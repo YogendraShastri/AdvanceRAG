@@ -122,10 +122,10 @@ for chunk, score in reranked_chunks:
 - Running the cross-encoder over all 500 docs for every query would be too slow. So you use the bi-encoder as a fast "candidate selector" to get a shortlist of ~10, then let the cross-encoder carefully re-score just those 10. You get most of the accuracy benefit at a fraction of the cost.
 
 
-## Lost in Middle 
+### Lost in Middle 
 - Lost in the middle is the LLM behavior where model tend to pay more attention to the beginning and end of the context and ignore or under weight information in the middle.
 
-```python
+```bash
 """
 [Important Info A]  ← beginning  
 [Some filler text…]  
@@ -135,5 +135,41 @@ for chunk, score in reranked_chunks:
 """
 ```
 
+- **High Performance:** When relevant information is at the beginning (Primacy Bias) or the end (Recency Bias) of the context window.
+- **Low Performance:** When the "gold" information is buried in the middle.
 
-##  
+### The Solution - Long Context Reordering
+- instead of ordering relevant chunks in simple order, we shuffle the document in such a way that more relevant ones are at the edges.
+
+```python
+# you have your top chunks
+top_chunks = ["","","",""]
+
+# Apply Long Context Reordering
+from langchain_community.document_transformers import LongContextReorder
+
+reorder = LongContextReorder()
+reordered_documents = reorder.transform_documents(top_chunks)
+
+print(reordered_documents)
+```
+
+#### Reordering time, we do not tell what was the query, how it reorder as per query ?
+**The short answer:** LongContextReorder does not look at your query at all. It relies entirely on the order of the documents it receives from your Retriever (like FAISS).
+- When you perform a similarity search in FAISS, the documents are already sorted by relevance (best to worst).
+- The LongContextReorder transformer assumes that the document at index 0 is your most important piece of information.
+- It then rearranges that sorted list into a "zig-zag" pattern to place the most relevant items at the very beginning and the very end of the context. 
+
+```bash
+Example : 
+1st (Best) - 1st (Index 0)
+2nd (Next Best) - Last (Index 9)
+3rd (Next Best) - 2nd (Index 1)
+4th (Next Best) - 9th (Index 8)
+.
+.
+.
+```
+
+### RAG Fusion
+- what is rag fusion?
