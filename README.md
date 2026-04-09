@@ -171,5 +171,14 @@ Example :
 .
 ```
 
-### RAG Fusion
-- what is rag fusion?
+### Reciprocal Rank Fusion (RRF)
+- RRF is a simple but powerful algorithm used to combine the results of multiple search strategies (like Vector Search and Keyword Search) into a single, unified ranking.
+- The core idea is that documents appearing at the top of multiple search lists should be ranked higher than documents that only appear at the top of one list.
+
+$$Score(d) = \sum_{r \in R} \frac{1}{k + rank(d, r)}$$
+
+- $R$: The set of result lists (e.g., List 1 from Vector Search, List 2 from Keyword Search).
+- $rank(d, r)$: The position of document $d$ in list $r$ (starting at 1).
+- $k$ is smoothing factor.
+
+
